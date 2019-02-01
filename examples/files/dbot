@@ -1,0 +1,81 @@
+package main
+
+import (
+	"fmt"
+
+	"github.com/nlopes/slack"
+	"os"
+)
+
+func main() {
+
+	if len(os.Args) < 2 {
+		fmt.Println("[Error] action type is wrong, support: [ file | msg ] exit")
+		os.Exit(0)
+	}
+	action := os.Args[1]
+
+	token := os.Getenv("ddser_tech_bot_token")
+
+	switch action {
+	case "file":
+		if len(os.Args) < 5 {
+			fmt.Println("[Error] Not have enough param for upload file: ChannelName, fileName, filePath")
+			os.Exit(0)
+		}
+		fmt.Println("upload file")
+		uploadFile(token, os.Args[2], os.Args[3], os.Args[4])
+	case "msg":
+		if len(os.Args) < 5 {
+			fmt.Println("[Error] Not have enough param for send msg: ChannelName, UserName, MsgText")
+			os.Exit(0)
+		}
+		fmt.Println("send message")
+		sendMsg(token, os.Args[2], os.Args[3], os.Args[4])
+	default:
+		fmt.Println("[Error] action type is wrong, support: [ file | msg ] exit")
+		os.Exit(0)
+
+	}
+
+}
+
+func sendMsg(token string, channelName string, userName string, msgContext string) {
+	api := slack.New(token)
+	attachment := slack.Attachment{
+		//Pretext:    "some prete111xt",
+		//AuthorName: "jj11",
+		//Text:       "some t11111ext",
+		//// Uncomment the following part to send a field too
+		//
+		//Fields: []slack.AttachmentField{
+		//	slack.AttachmentField{
+		//		Title: "a",
+		//		Value: "no",
+		//	},
+		//},
+	}
+
+	channelID, timestamp, err := api.PostMessage(channelName, slack.MsgOptionText(msgContext, false), slack.MsgOptionAttachments(attachment), slack.MsgOptionUsername(userName))
+	if err != nil {
+		fmt.Printf("%s\n", err)
+		return
+	}
+	fmt.Printf("Message successfully sent to channel %s at %s", channelID, timestamp)
+}
+
+func uploadFile(token string, channelName string, fileName string, filePath string) {
+	api := slack.New(token)
+	params := slack.FileUploadParameters{
+		Title:    fileName,
+		File:     filePath,
+		Filename: fileName,
+		Channels: []string{channelName},
+	}
+	file, err := api.UploadFile(params)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+		return
+	}
+	fmt.Printf("Name: %s, URL: %s\n", file.Name, file.URL)
+}
